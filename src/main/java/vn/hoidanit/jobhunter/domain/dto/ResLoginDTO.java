@@ -1,4 +1,4 @@
-package vn.hoidanit.jobhunter.dto;
+package vn.hoidanit.jobhunter.domain.dto;
 
 public class ResLoginDTO {
   private String accessToken;
