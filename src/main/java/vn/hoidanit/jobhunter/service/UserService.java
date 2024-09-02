@@ -10,10 +10,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import vn.hoidanit.jobhunter.domain.User;
-import vn.hoidanit.jobhunter.domain.dto.CreateUserDTO;
-import vn.hoidanit.jobhunter.domain.dto.FetchUserDTO;
-import vn.hoidanit.jobhunter.domain.dto.ResultPaginationDTO;
-import vn.hoidanit.jobhunter.domain.dto.UpdateUserDTO;
+import vn.hoidanit.jobhunter.domain.response.ResCreateUserDTO;
+import vn.hoidanit.jobhunter.domain.response.ResFetchUserDTO;
+import vn.hoidanit.jobhunter.domain.response.ResUpdateUserDTO;
+import vn.hoidanit.jobhunter.domain.response.ResultPaginationDTO;
 import vn.hoidanit.jobhunter.repository.UserRepository;
 
 @Service
@@ -45,7 +45,7 @@ public class UserService {
     Page<User> pageUser = this.userRepository.findAll(spec, pageable);
     ResultPaginationDTO rs = new ResultPaginationDTO();
     ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
-    List<FetchUserDTO> listFetchUserDTOs = new ArrayList<FetchUserDTO>();
+    List<ResFetchUserDTO> listFetchUserDTOs = new ArrayList<ResFetchUserDTO>();
 
     mt.setPage(pageable.getPageNumber() + 1);
     mt.setPageSize(pageable.getPageSize());
@@ -56,7 +56,7 @@ public class UserService {
     rs.setMeta(mt);
     List<User> listUsers = pageUser.getContent();
     for (User u : listUsers) {
-      FetchUserDTO fetchUserDTO = this.handleTransferFetchUserDTO(u);
+      ResFetchUserDTO fetchUserDTO = this.handleTransferFetchUserDTO(u);
       listFetchUserDTOs.add(fetchUserDTO);
     }
     rs.setResult(listFetchUserDTOs);
@@ -90,8 +90,8 @@ public class UserService {
     return this.userRepository.existsById(id);
   }
 
-  public CreateUserDTO handleTransferUserDTO(User user) {
-    CreateUserDTO userDTO = new CreateUserDTO();
+  public ResCreateUserDTO handleTransferUserDTO(User user) {
+    ResCreateUserDTO userDTO = new ResCreateUserDTO();
 
     userDTO.setId(user.getId());
     userDTO.setName(user.getName());
@@ -103,8 +103,8 @@ public class UserService {
     return userDTO;
   }
 
-  public UpdateUserDTO handleTransfUpdateUserDTO(User user) {
-    UpdateUserDTO updateUserDTO = new UpdateUserDTO();
+  public ResUpdateUserDTO handleTransfUpdateUserDTO(User user) {
+    ResUpdateUserDTO updateUserDTO = new ResUpdateUserDTO();
 
     updateUserDTO.setId(user.getId());
     updateUserDTO.setName(user.getName());
@@ -115,8 +115,8 @@ public class UserService {
     return updateUserDTO;
   }
 
-  public FetchUserDTO handleTransferFetchUserDTO(User user) {
-    FetchUserDTO fetchUserDTO = new FetchUserDTO();
+  public ResFetchUserDTO handleTransferFetchUserDTO(User user) {
+    ResFetchUserDTO fetchUserDTO = new ResFetchUserDTO();
 
     fetchUserDTO.setId(user.getId());
     fetchUserDTO.setEmail(user.getEmail());
