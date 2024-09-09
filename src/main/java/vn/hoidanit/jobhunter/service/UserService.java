@@ -1,14 +1,15 @@
 package vn.hoidanit.jobhunter.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import vn.hoidanit.jobhunter.domain.Company;
 import vn.hoidanit.jobhunter.domain.User;
 import vn.hoidanit.jobhunter.domain.response.ResCreateUserDTO;
 import vn.hoidanit.jobhunter.domain.response.ResFetchUserDTO;
@@ -21,11 +22,21 @@ public class UserService {
 
   private final UserRepository userRepository;
 
-  public UserService(UserRepository userRepository) {
+  private final CompanyService companyService;
+
+  public UserService(UserRepository userRepository, CompanyService companyService) {
     this.userRepository = userRepository;
+    this.companyService = companyService;
   }
 
   public User handleCreateUser(User user) {
+
+    // check company
+    if (user.getCompany() != null) {
+      Optional<Company> companyOptional = this.companyService.findById(user.getCompany().getId());
+      user.setCompany(companyOptional.isPresent() ? companyOptional.get() : null);
+    }
+
     return this.userRepository.save(user);
   }
 
@@ -45,7 +56,6 @@ public class UserService {
     Page<User> pageUser = this.userRepository.findAll(spec, pageable);
     ResultPaginationDTO rs = new ResultPaginationDTO();
     ResultPaginationDTO.Meta mt = new ResultPaginationDTO.Meta();
-    List<ResFetchUserDTO> listFetchUserDTOs = new ArrayList<ResFetchUserDTO>();
 
     mt.setPage(pageable.getPageNumber() + 1);
     mt.setPageSize(pageable.getPageSize());
@@ -54,13 +64,24 @@ public class UserService {
     mt.setTotal(pageUser.getTotalElements());
 
     rs.setMeta(mt);
-    List<User> listUsers = pageUser.getContent();
-    for (User u : listUsers) {
-      ResFetchUserDTO fetchUserDTO = this.handleTransferFetchUserDTO(u);
-      listFetchUserDTOs.add(fetchUserDTO);
-    }
-    rs.setResult(listFetchUserDTOs);
 
+    // remove sensitive data
+    List<ResFetchUserDTO> listUser = pageUser.getContent()
+        .stream().map(item -> new ResFetchUserDTO(
+            item.getId(),
+            item.getEmail(),
+            item.getName(),
+            item.getGender(),
+            item.getAddress(),
+            item.getAge(),
+            item.getUpdatedAt(),
+            item.getCreatedAt(),
+            new ResFetchUserDTO.CompanyUser(
+                item.getCompany() != null ? item.getCompany().getId() : 0,
+                item.getCompany() != null ? item.getCompany().getName() : null)))
+        .collect(Collectors.toList());
+
+    rs.setResult(listUser);
     return rs;
   }
 
@@ -71,6 +92,12 @@ public class UserService {
       currentUser.setGender(requestUser.getGender());
       currentUser.setAge(requestUser.getAge());
       currentUser.setAddress(requestUser.getAddress());
+
+      // check company exist
+      if (requestUser.getCompany() != null) {
+        Optional<Company> companyOptional = this.companyService.findById(requestUser.getCompany().getId());
+        requestUser.setCompany(companyOptional.isPresent() ? companyOptional.get() : null);
+      }
 
       // update user
       currentUser = this.userRepository.save(currentUser);
@@ -92,19 +119,32 @@ public class UserService {
 
   public ResCreateUserDTO handleTransferUserDTO(User user) {
     ResCreateUserDTO userDTO = new ResCreateUserDTO();
+    ResCreateUserDTO.CompanyUser com = new ResCreateUserDTO.CompanyUser();
 
     userDTO.setId(user.getId());
     userDTO.setName(user.getName());
     userDTO.setEmail(user.getEmail());
+    userDTO.setAge(user.getAge());
     userDTO.setGender(user.getGender());
     userDTO.setAddress(user.getAddress());
     userDTO.setCreatedAt(user.getCreatedAt());
 
+    if (user.getCompany() != null) {
+      com.setId(user.getCompany().getId());
+      com.setName(user.getCompany().getName());
+      userDTO.setCompany(com);
+    }
     return userDTO;
   }
 
   public ResUpdateUserDTO handleTransfUpdateUserDTO(User user) {
     ResUpdateUserDTO updateUserDTO = new ResUpdateUserDTO();
+    ResUpdateUserDTO.CompanyUser com = new ResUpdateUserDTO.CompanyUser();
+    if (user.getCompany() != null) {
+      com.setId(user.getCompany().getId());
+      com.setName(user.getCompany().getName());
+      updateUserDTO.setCompany(com);
+    }
 
     updateUserDTO.setId(user.getId());
     updateUserDTO.setName(user.getName());
